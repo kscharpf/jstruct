@@ -8,6 +8,7 @@ import io.satellitesoftware.struct.FD;
 import io.satellitesoftware.struct.StructureDefinition;
 import java.util.List;
 import java.util.ArrayList;
+import java.nio.ByteOrder;
 
 public class StructureBuffer {
 	private final StructureDefinition mStructureDefinition;
@@ -26,7 +27,7 @@ public class StructureBuffer {
 	 * @param fieldValueMap non-null mapping of strings to values
 	 * @return ByteBuffer byte layout of the data structure
 	 */
-	public void compose(ByteBuffer b, final Map<String, Number> fieldValueMap) {
+	public void compose(ByteBuffer b, final int initPos, final Map<String, Number> fieldValueMap) {
 		// Iterate over the structure definition and extract entries from the provided map
 		// if they are defined. If such a named field is not defined, ignore,
 		// thereby leaving the bytes at that position null.
@@ -34,7 +35,7 @@ public class StructureBuffer {
 		for(FD fd : mStructureDefinition) {
 			Number val = fieldValueMap.get(fd.name);
 			if(val != null) {
-				fd.encode(b, offset, val);
+				fd.encode(b, initPos + offset, val);
 			}
 			offset += fd.type.getSize();
 		}
@@ -48,8 +49,9 @@ public class StructureBuffer {
 	 */
 	public ByteBuffer compose(final Map<String, Number> fieldValueMap) {
 		ByteBuffer b = ByteBuffer.allocate(mStructureDefinition.getSize());
+		b.order(ByteOrder.BIG_ENDIAN);
 
-		compose(b, fieldValueMap);
+		compose(b, 0, fieldValueMap);
 		return b;
 	}
 
@@ -59,9 +61,13 @@ public class StructureBuffer {
 	 */
 	public ByteBuffer compose_all(final List<Map<String, Number>> fieldValueMapSequence) {
 		ByteBuffer b = ByteBuffer.allocate(mStructureDefinition.getSize() * fieldValueMapSequence.size());
+		b.order(ByteOrder.BIG_ENDIAN);
 		for(Map<String, Number> entry : fieldValueMapSequence) {
-			compose(b, entry);
+			compose(b, b.position(), entry);
+			b.position(b.position() + mStructureDefinition.getSize());
 		}
+		b.position(0);
+
 		return b;
 	}
 
@@ -75,7 +81,6 @@ public class StructureBuffer {
 	public Map<String, Number> decompose(ByteBuffer b) {
 		Map<String,Number> out = new HashMap<String,Number>();
 		if(b.remaining() >= mStructureDefinition.getSize()) {
-			int offset = 0;
 			for(FD fd : mStructureDefinition) {
 				out.put(fd.name, fd.decode(b));
 			}

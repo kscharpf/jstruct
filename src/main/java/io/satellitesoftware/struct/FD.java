@@ -27,7 +27,7 @@ public class FD {
 				break;
 
 			case INT:
-				b.putInt(offset, ((Long)val).intValue());
+				b.putInt(offset, ((Integer)val).intValue());
 				break;
 
 			case USHORT:

@@ -8,17 +8,16 @@ import java.util.Map;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.io.RandomAccessFile;
 import java.io.IOException;
 
 public class StructureFileIO {
 	private final StructureBuffer mBuffer;
-	private final String mKey;
 
-	public StructureFileIO(final StructureDefinition definition, final String key) {
+	public StructureFileIO(final StructureDefinition definition) {
 		mBuffer = new StructureBuffer(definition);
-		mKey = key;
 	}
 
 	public List<Map<String,Number>> decompose(final String fname) {
@@ -27,6 +26,7 @@ public class StructureFileIO {
 			RandomAccessFile aFile = new RandomAccessFile(fname, "r");
 			FileChannel fc = aFile.getChannel();
 			ByteBuffer b = ByteBuffer.allocate((int)fc.size());
+			b.order(ByteOrder.BIG_ENDIAN);
 			fc.read(b);
 			b.flip();
 

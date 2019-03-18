@@ -5,12 +5,9 @@ import io.satellitesoftware.struct.FD;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.HashMap;
 
 public class StructureDefinition implements Iterable<FD> {
-	private List<FD>         mOrderedFields;
-	private Map<String, FD>  mNameToFieldDefinition = new HashMap<String, FD>();
+	private final List<FD>         mOrderedFields;
 	private int              mStructureSize = 0;
 
 	/**
@@ -30,7 +27,6 @@ public class StructureDefinition implements Iterable<FD> {
 		mOrderedFields = orderedFields;
 		for(FD fd : mOrderedFields) {
 			mStructureSize += fd.type.getSize();
-			mNameToFieldDefinition.put(fd.name, fd);
 		}
 	}
 
@@ -42,7 +38,6 @@ public class StructureDefinition implements Iterable<FD> {
 	public void addField(final FD field) {
 		mOrderedFields.add(field);
 		mStructureSize += field.type.getSize();
-		mNameToFieldDefinition.put(field.name, field);
 	}
 
 	/**
