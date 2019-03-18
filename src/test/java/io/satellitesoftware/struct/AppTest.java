@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.nio.ByteBuffer;
 import java.io.File;
 import java.io.IOException;
+import io.satellitesoftware.struct.IFilter;
+import io.satellitesoftware.struct.MaskedFilter;
 
 
 /**
@@ -120,9 +122,9 @@ public class AppTest
 	    StructureBuffer sb = new StructureBuffer(sd);
 	    List<Map<String, Number>> myList = makeValueList();
 
-	    ByteBuffer b = sb.compose_all(myList);
+	    ByteBuffer b = sb.composeAll(myList);
 	    
-	    List<Map<String, Number>> myListCopy = sb.decompose_all(b);
+	    List<Map<String, Number>> myListCopy = sb.decomposeAll(b);
 	    assertEquals(myList.size(), myListCopy.size());
 	    assertEquals(myList, myListCopy);
     }
@@ -143,6 +145,49 @@ public class AppTest
 	    	List<Map<String, Number>> myListCopy = sf.decompose(fname);
 	
 	    	assertEquals(myList, myListCopy);
+	    } catch(IOException e) {
+		    e.printStackTrace();
+		    fail();
+	    }
+    }
+
+    public IFilter makeFilter() {
+	    IFilter f = new MaskedFilter("Field1", new HashMap<String, Long>() {
+		    {
+			    put("Field1", new Long(1));
+			    put("Field2", new Long(2));
+			    put("Field3", new Long(4));
+			    put("Field4", new Long(8));
+			    put("Field5", new Long(16));
+			    put("Field6", new Long(32));
+		    }
+	    });
+	    return f;
+
+    }
+
+    public void testFilteredStructuredFileIO() {
+	    try {
+	    	StructureDefinition sd = makeSD();
+		IFilter filter = makeFilter();
+	    	StructureFileIO sf = new StructureFileIO(sd, filter);
+	    	List<Map<String, Number>> myList = makeValueList();
+		myList.get(0).put("Field1", new Long(1));
+
+		List<Map<String, Number>> testList = new ArrayList<Map<String, Number>>();
+		testList.add(new HashMap<String, Number>(){{put("Field1", new Long(1));}});
+		testList.add(myList.get(1));
+
+	    	File f = File.createTempFile("myfile_",".bin");
+	    	String fname = f.getName();
+
+		System.out.println("Created file: " + fname);
+	    	f.delete();
+	    	sf.compose(fname, myList);
+	
+	    	List<Map<String, Number>> myListCopy = sf.decompose(fname);
+	
+	    	assertEquals(testList, myListCopy);
 	    } catch(IOException e) {
 		    e.printStackTrace();
 		    fail();
