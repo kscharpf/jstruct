@@ -16,55 +16,58 @@ public class FD {
 		this.name = name;
 	}
 
-	public void encode(ByteBuffer b, final int offset, final String val) {
+	public void encode(ByteBuffer b, final int offset, final Number val) {
 		switch(type) {
 			case FLOAT:
-				b.putFloat(offset, Float.parseFloat(val));
+				b.putFloat(offset, ((Float)val).floatValue());
 				break;
 
 			case UINT:
+				b.putInt(offset, ((Long)val).intValue());
+				break;
+
 			case INT:
-				b.putInt(offset, Integer.parseInt(val));
+				b.putInt(offset, ((Long)val).intValue());
 				break;
 
 			case USHORT:
-				b.putShort(offset, Short.parseShort(val));
+				b.putShort(offset, ((Integer)val).shortValue());
 				break;
 
 			case UINT_SWAP:
 				{
-					int tmp = Integer.parseInt(val);
+					long tmp = ((Long)val).longValue();
 					tmp = ((tmp & 0xFFFF0000)>>>16) | ((tmp & 0x0000FFFF) << 16);
-					b.putInt(offset, tmp);
+					b.putInt(offset, (int)tmp);
 				}
 				break;
 		}
 	}
 
-	public String decode(ByteBuffer b) {
-		String result = null;
+	public Number decode(ByteBuffer b) {
+		Number result = null;
 		switch(type) {
 			case FLOAT:
-				result = String.format("%f", b.getFloat());
+				result = new Float(b.getFloat());
 				break;
 
 			case UINT:
-				result = String.format("%d", b.getInt() & 0xFFFFFFFFL);
+				result = new Long(((long)(b.getInt())) & 0xFFFFFFFFL);
 				break;
 
 			case INT:
-				result = String.format("%d", b.getInt());
+				result = new Integer(b.getInt());
 				break;
 
 			case USHORT:
-				result = String.format("%d", b.getShort() & 0xFFFF);
+				result = new Integer(((int)(b.getShort())) & 0xFFFF);
 				break;
 
 			case UINT_SWAP:
 				{
 					long val = b.getInt() & 0xFFFFFFFFL;
 					val = ((val & 0xFFFF0000) >>> 16) | ((val & 0x0000FFFF) << 16);
-					result = String.format("%d", val & 0xFFFFFFFFL);
+					result = new Long(val & 0xFFFFFFFFL);
 				}
 		}
 		return result;
