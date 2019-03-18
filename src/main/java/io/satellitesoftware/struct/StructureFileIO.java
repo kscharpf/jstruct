@@ -2,6 +2,8 @@ package io.satellitesoftware.struct;
 
 import io.satellitesoftware.struct.StructureDefinition;
 import io.satellitesoftware.struct.StructureBuffer;
+import io.satellitesoftware.struct.IFilter;
+import io.satellitesoftware.struct.NullFilter;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -16,8 +18,12 @@ import java.io.IOException;
 public class StructureFileIO {
 	private final StructureBuffer mBuffer;
 
+	public StructureFileIO(final StructureDefinition definition, final IFilter filter) {
+		mBuffer = new StructureBuffer(definition, filter);
+	}
+
 	public StructureFileIO(final StructureDefinition definition) {
-		mBuffer = new StructureBuffer(definition);
+		this(definition, new NullFilter());
 	}
 
 	public List<Map<String,Number>> decompose(final String fname) {
@@ -30,7 +36,7 @@ public class StructureFileIO {
 			fc.read(b);
 			b.flip();
 
-			List<Map<String,Number>> out = mBuffer.decompose_all(b);
+			List<Map<String,Number>> out = mBuffer.decomposeAll(b);
 			return out;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -42,7 +48,7 @@ public class StructureFileIO {
 		for(Map<String,Number> entry : fieldValueMapSequence) {
 			try {
 				File file = new File(fname);
-				ByteBuffer b = mBuffer.compose_all(fieldValueMapSequence);
+				ByteBuffer b = mBuffer.composeAll(fieldValueMapSequence);
 				FileChannel fc = new FileOutputStream(file).getChannel();
 				fc.write(b);
 				fc.close();

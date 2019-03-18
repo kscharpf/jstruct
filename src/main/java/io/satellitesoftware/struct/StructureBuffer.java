@@ -2,22 +2,31 @@ package io.satellitesoftware.struct;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.TreeMap;
 import java.nio.ByteBuffer;
 import io.satellitesoftware.struct.DataType;
 import io.satellitesoftware.struct.FD;
 import io.satellitesoftware.struct.StructureDefinition;
+import io.satellitesoftware.struct.IFilter;
+import io.satellitesoftware.struct.NullFilter;
 import java.util.List;
 import java.util.ArrayList;
 import java.nio.ByteOrder;
 
 public class StructureBuffer {
 	private final StructureDefinition mStructureDefinition;
+	private final IFilter mFilter;
+
+	public StructureBuffer(final StructureDefinition structureDefinition, final IFilter filter) {
+		mStructureDefinition = structureDefinition;
+		mFilter = filter;
+	}
 
 	/**
 	 * Construct a StructureBuffer corresponding to the provided definition
 	 */
 	public StructureBuffer(final StructureDefinition structureDefinition) {
-		mStructureDefinition = structureDefinition;
+		this(structureDefinition, new NullFilter());
 	}
 
 	/**
@@ -59,7 +68,7 @@ public class StructureBuffer {
 	 * Using the specified structure definition, convert a sequence of mappings of
 	 * string names to values into a bytebuffer.
 	 */
-	public ByteBuffer compose_all(final List<Map<String, Number>> fieldValueMapSequence) {
+	public ByteBuffer composeAll(final List<Map<String, Number>> fieldValueMapSequence) {
 		ByteBuffer b = ByteBuffer.allocate(mStructureDefinition.getSize() * fieldValueMapSequence.size());
 		b.order(ByteOrder.BIG_ENDIAN);
 		for(Map<String, Number> entry : fieldValueMapSequence) {
@@ -84,6 +93,7 @@ public class StructureBuffer {
 			for(FD fd : mStructureDefinition) {
 				out.put(fd.name, fd.decode(b));
 			}
+			out = mFilter.apply(out);
 		}
 		return out;
 	}
@@ -92,10 +102,24 @@ public class StructureBuffer {
 	 * Iterate through a bytebuffer decomming structures until
 	 * the buffer is exhausted.
 	 */
-	public List<Map<String, Number>> decompose_all(ByteBuffer b) {
+	public List<Map<String, Number>> decomposeAll(ByteBuffer b) {
 		List<Map<String, Number>> out = new ArrayList<Map<String,Number>>();
 		while(b.remaining() >= mStructureDefinition.getSize()) {
 			out.add(decompose(b));
+		}
+		return out;
+	}
+
+	/**
+	 * Iterate through a bytebuffer decomming structures until
+	 * the buffer is exhausted and return the output using a key
+	 * field from the decom'd struct.
+	 */
+	public Map<Number, Map<String, Number>> decomposeByKey(ByteBuffer b, final String k) {
+		Map<Number, Map<String, Number>> out = new TreeMap<Number, Map<String,Number>>();
+		while(b.remaining() >= mStructureDefinition.getSize()) {
+			Map<String, Number> m = decompose(b);
+			out.put(m.get(k), m);
 		}
 		return out;
 	}
